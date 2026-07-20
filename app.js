@@ -72,7 +72,7 @@ const SCRIPTURES = {
 const state = {
   // Config Settings
   activeScriptureKey: 'banya',
-  audioMode: 'tts', // 'tts' | 'stream' | 'custom'
+  audioMode: 'danny', // 'danny' | 'eunee' | 'tts' | 'custom'
   volume: 0.8,      // 0.0 - 1.0
   speed: 1.0,       // 0.5 - 1.5 (TTS speed)
   synthPitch: 750,  // 500Hz - 1000Hz (Moktak pitch)
@@ -394,6 +394,30 @@ animateParticles();
 // 5. Scripture Text Rendering & Sync
 // ==========================================
 function renderActiveScriptureText() {
+  if (state.audioMode === 'danny') {
+    dom.scriptureTitleBadge.textContent = "대니음원 (우종관 개인기도)";
+    dom.scriptureBodyContainer.innerHTML = `
+      <div class="scripture-placeholder audio-notice-box">
+        <p class="audio-notice-icon">☸</p>
+        <p class="audio-notice-title">대니음원 수행</p>
+        <p class="audio-notice-sub">우종관 개인기도2</p>
+        <p class="audio-notice-desc">목탁을 두드리면 마음의 평온과 함께 음원이 재생됩니다.</p>
+      </div>
+    `;
+    return;
+  } else if (state.audioMode === 'eunee') {
+    dom.scriptureTitleBadge.textContent = "으니음원 (조은희 개인기도)";
+    dom.scriptureBodyContainer.innerHTML = `
+      <div class="scripture-placeholder audio-notice-box">
+        <p class="audio-notice-icon">☸</p>
+        <p class="audio-notice-title">으니음원 수행</p>
+        <p class="audio-notice-sub">조은희 개인기도</p>
+        <p class="audio-notice-desc">목탁을 두드리면 마음의 평온과 함께 음원이 재생됩니다.</p>
+      </div>
+    `;
+    return;
+  }
+
   const sc = SCRIPTURES[state.activeScriptureKey];
   dom.scriptureTitleBadge.textContent = sc.title;
   dom.scriptureBodyContainer.innerHTML = '';
@@ -444,8 +468,11 @@ function scrollToActiveLine() {
 
 // Setup external streaming source or custom audio file
 function setupAudioPlayer() {
-  // If custom audio, use custom URL, else streaming URL
-  if (state.audioMode === 'custom' && state.customAudioUrl) {
+  if (state.audioMode === 'danny') {
+    dom.sutraAudioPlayer.src = 'Audio/우종관개인기도2.wav';
+  } else if (state.audioMode === 'eunee') {
+    dom.sutraAudioPlayer.src = 'Audio/조은희개인기도.wav';
+  } else if (state.audioMode === 'custom' && state.customAudioUrl) {
     dom.sutraAudioPlayer.src = state.customAudioUrl;
   } else if (state.audioMode === 'stream') {
     dom.sutraAudioPlayer.src = SCRIPTURES[state.activeScriptureKey].streamUrl;
@@ -486,7 +513,7 @@ function fadeAudioElement(targetVol, durationMs, callback) {
 
 // Audio Stream sync loop to auto-scroll scripture based on audio progress
 dom.sutraAudioPlayer.addEventListener('timeupdate', () => {
-  if (state.audioMode === 'tts') return;
+  if (state.audioMode === 'tts' || state.audioMode === 'danny' || state.audioMode === 'eunee') return;
   const player = dom.sutraAudioPlayer;
   if (!player.duration || player.duration === Infinity) return;
   
@@ -686,7 +713,9 @@ function restartChant() {
     }
   } else {
     dom.sutraAudioPlayer.currentTime = 0;
-    updateActiveLineHighlight(0);
+    if (state.audioMode !== 'danny' && state.audioMode !== 'eunee') {
+      updateActiveLineHighlight(0);
+    }
   }
 }
 
@@ -811,6 +840,13 @@ function toggleAudioModeConfig(mode) {
     
     // Stop audio player
     dom.sutraAudioPlayer.pause();
+  } else if (mode === 'danny' || mode === 'eunee') {
+    dom.fileUploadContainer.classList.add('hidden');
+    dom.speedControlGroup.classList.add('hidden');
+    
+    // Stop Speech
+    window.speechSynthesis.cancel();
+    setupAudioPlayer();
   } else if (mode === 'stream') {
     dom.fileUploadContainer.classList.add('hidden');
     dom.speedControlGroup.classList.add('hidden');
@@ -826,6 +862,8 @@ function toggleAudioModeConfig(mode) {
     window.speechSynthesis.cancel();
     setupAudioPlayer();
   }
+  
+  renderActiveScriptureText();
   
   // Reset audio state to pause/idle on switch
   triggerFadeOut();

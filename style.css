@@ -828,8 +828,45 @@ body {
 
 .scripture-placeholder p {
   font-size: 1.2rem;
-  opacity: 0.6;
-  font-style: italic;
+  color: var(--color-gold-medium);
+  letter-spacing: 0.1rem;
+}
+
+.audio-notice-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  padding: 1rem;
+  text-align: center;
+}
+
+.audio-notice-icon {
+  font-size: 2rem !important;
+  color: var(--color-gold-bright) !important;
+  opacity: 0.9 !important;
+  margin-bottom: 0.2rem !important;
+}
+
+.audio-notice-title {
+  font-size: 1.2rem !important;
+  font-weight: 600 !important;
+  color: var(--color-gold-bright) !important;
+  opacity: 1 !important;
+}
+
+.audio-notice-sub {
+  font-size: 0.95rem !important;
+  color: var(--color-gold-medium) !important;
+  opacity: 0.8 !important;
+}
+
+.audio-notice-desc {
+  font-size: 0.85rem !important;
+  color: var(--color-text-muted) !important;
+  margin-top: 0.4rem !important;
+  opacity: 0.7 !important;
 }
 
 .viewer-footer {
