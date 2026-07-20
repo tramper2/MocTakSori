@@ -615,8 +615,19 @@ body {
   transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-.moktak-wrapper:hover {
-  transform: scale(1.02);
+.moktak-img-realistic {
+  width: 320px;
+  height: 320px;
+  object-fit: contain;
+  filter: drop-shadow(0 15px 25px rgba(0, 0, 0, 0.75)) drop-shadow(0 0 15px rgba(212, 175, 55, 0.25));
+  transition: filter 0.3s ease, transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.moktak-wrapper:hover .moktak-img-realistic {
+  filter: drop-shadow(0 20px 30px rgba(0, 0, 0, 0.85)) drop-shadow(0 0 25px rgba(252, 232, 129, 0.45));
+  transform: scale(1.03);
 }
 
 /* Active stretch-squish effect when hit */
@@ -626,13 +637,13 @@ body {
 
 @keyframes moktak-hit {
   0% {
-    transform: scale(1.02);
+    transform: scale(1.03);
   }
   30% {
-    transform: scale(0.92, 1.06) translateY(-4px);
+    transform: scale(0.94, 1.05) translateY(-4px);
   }
   60% {
-    transform: scale(1.06, 0.94) translateY(2px);
+    transform: scale(1.04, 0.96) translateY(2px);
   }
   100% {
     transform: scale(1);
@@ -643,12 +654,21 @@ body {
 .mallet-container {
   position: absolute;
   right: -5%;
-  top: -10%;
+  top: -12%;
   pointer-events: none;
   z-index: 15;
-  transform-origin: 60px 300px; /* Pivot around bottom of handle */
-  transform: rotate(25deg) translate(20px, -20px);
+  transform-origin: 70px 280px;
+  transform: rotate(20deg) translate(15px, -15px);
   transition: transform 0.35s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.mallet-img-realistic {
+  width: 140px;
+  height: 320px;
+  object-fit: contain;
+  filter: drop-shadow(-5px 10px 15px rgba(0, 0, 0, 0.6));
+  user-select: none;
+  -webkit-user-drag: none;
 }
 
 /* Strike motion animation */
@@ -658,19 +678,19 @@ body {
 
 @keyframes mallet-strike {
   0% {
-    transform: rotate(25deg) translate(20px, -20px);
+    transform: rotate(20deg) translate(15px, -15px);
   }
   25% {
-    transform: rotate(38deg) translate(30px, -25px); /* Pre-swing wind-up */
+    transform: rotate(35deg) translate(25px, -20px);
   }
   50% {
-    transform: rotate(-10deg) translate(-15px, 20px); /* Strike point */
+    transform: rotate(-15deg) translate(-35px, 35px);
   }
   75% {
-    transform: rotate(10deg) translate(5px, 0px); /* Recoil bounce */
+    transform: rotate(8deg) translate(5px, 0px);
   }
   100% {
-    transform: rotate(25deg) translate(20px, -20px); /* Return to resting */
+    transform: rotate(20deg) translate(15px, -15px);
   }
 }
 
