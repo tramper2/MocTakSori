@@ -468,6 +468,7 @@ function scrollToActiveLine() {
 
 // Setup external streaming source or custom audio file
 function setupAudioPlayer() {
+  dom.sutraAudioPlayer.loop = true;
   if (state.audioMode === 'danny') {
     dom.sutraAudioPlayer.src = 'Audio/우종관개인기도2.wav';
   } else if (state.audioMode === 'eunee') {
@@ -527,9 +528,16 @@ dom.sutraAudioPlayer.addEventListener('timeupdate', () => {
   }
 });
 
-// If audio player ends, loop back to start
+// If audio player ends, loop back to start seamlessly
 dom.sutraAudioPlayer.addEventListener('ended', () => {
-  restartChant();
+  if (state.audioMode !== 'tts') {
+    dom.sutraAudioPlayer.currentTime = 0;
+    if (state.audioState === 'playing' || state.audioState === 'fading_in') {
+      dom.sutraAudioPlayer.play().catch(e => console.warn(e));
+    }
+  } else {
+    restartChant();
+  }
 });
 
 // Handles TTS playback line by line
