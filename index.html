@@ -187,14 +187,121 @@
 
           <!-- Interactive Area Container -->
           <div class="interactive-container">
-            <!-- Realistic Moktak Image Graphic -->
-            <div class="moktak-wrapper realistic-moktak-wrapper" id="moktak-hit-area">
-              <img src="images/moktak_realistic.png" alt="실사 목탁" class="moktak-img-realistic" id="moktak-img">
+            <!-- Pure Clean Wooden Moktak SVG Graphic (No patterns) -->
+            <div class="moktak-wrapper" id="moktak-hit-area">
+              <svg id="moktak-svg" viewBox="0 0 400 400" width="340" height="340">
+                <defs>
+                  <!-- Glow filter -->
+                  <filter id="glow-filter" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur stdDeviation="8" result="blur" />
+                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                  </filter>
+                  <!-- Strong blur filter for shadow -->
+                  <filter id="shadow-blur" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur stdDeviation="15" />
+                  </filter>
+
+                  <!-- Wood Gradient -->
+                  <radialGradient id="wood-gradient" cx="45%" cy="35%" r="65%">
+                    <stop offset="0%" stop-color="#D4997E" />
+                    <stop offset="40%" stop-color="#9E6857" />
+                    <stop offset="80%" stop-color="#5E372B" />
+                    <stop offset="100%" stop-color="#331811" />
+                  </radialGradient>
+                  
+                  <!-- Handle Gradient -->
+                  <linearGradient id="handle-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stop-color="#5E372B" />
+                    <stop offset="100%" stop-color="#2D120B" />
+                  </linearGradient>
+
+                  <!-- Gold/Brass Gradient for Highlights -->
+                  <linearGradient id="gold-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#FCE881" />
+                    <stop offset="50%" stop-color="#C5A030" />
+                    <stop offset="100%" stop-color="#8A6915" />
+                  </linearGradient>
+                </defs>
+
+                <!-- Deep Floor Shadow -->
+                <ellipse cx="200" cy="350" rx="120" ry="18" fill="#000" opacity="0.6" filter="url(#shadow-blur)"/>
+
+                <!-- Main Moktak Group -->
+                <g id="moktak-body-group" class="moktak-body-interactive">
+                  
+                  <!-- Wooden Body Back-Handle Loop -->
+                  <path d="M 155,90 C 155,45 170,30 200,30 C 230,30 245,45 245,90 Z" 
+                        fill="url(#handle-gradient)" stroke="#260F09" stroke-width="4" stroke-linejoin="round"/>
+                  <!-- Center cutout hole of handle -->
+                  <path d="M 180,75 C 180,60 190,52 200,52 C 210,52 220,60 220,75 C 220,80 210,88 200,88 C 190,88 180,80 180,75 Z" 
+                        fill="#121214" stroke="#260F09" stroke-width="3"/>
+
+                  <!-- Main Sphere Body (Clean Wood Surface without Patterns) -->
+                  <path d="M 200,80 
+                           C 305,80 350,140 350,240 
+                           C 350,325 290,340 200,340 
+                           C 110,340 50,325 50,240 
+                           C 50,140 95,80 200,80 Z" 
+                        fill="url(#wood-gradient)" stroke="#260F09" stroke-width="6" stroke-linejoin="round"/>
+
+                  <!-- Outer rim specular sheen highlight -->
+                  <path d="M 52,240 C 52,142 96,82 200,82 C 304,82 348,142 348,240 C 344,215 310,100 200,100 C 90,100 56,215 52,240 Z" 
+                        fill="#FFF" opacity="0.1" filter="url(#glow-filter)"/>
+
+                  <!-- Hollow Slit (Sound Chamber) - Clean Elegant Cavity -->
+                  <path d="M 110,250 
+                           Q 160,225 200,225 
+                           Q 240,225 290,250 
+                           Q 200,270 110,250 Z" 
+                        fill="#150502" stroke="#260F09" stroke-width="4" stroke-linejoin="round"/>
+                  
+                  <!-- Round holes at both ends of the slit with gold inner ring -->
+                  <circle cx="110" cy="250" r="14" fill="#150502" stroke="#260F09" stroke-width="3"/>
+                  <circle cx="290" cy="250" r="14" fill="#150502" stroke="#260F09" stroke-width="3"/>
+                  
+                  <circle cx="110" cy="250" r="5" fill="url(#gold-gradient)"/>
+                  <circle cx="290" cy="250" r="5" fill="url(#gold-gradient)"/>
+
+                  <!-- Smooth Warm Bottom Sheen Reflection -->
+                  <path d="M 85,275 C 95,310 140,328 200,328 C 260,328 305,310 315,275 C 295,295 250,305 200,305 C 150,305 105,295 85,275 Z" 
+                        fill="url(#gold-gradient)" opacity="0.2" filter="url(#glow-filter)"/>
+                </g>
+              </svg>
             </div>
 
-            <!-- Realistic Mallet (Stick) Graphic -->
-            <div class="mallet-container realistic-mallet-container" id="mallet-element">
-              <img src="images/mallet_realistic.png" alt="목탁 채" class="mallet-img-realistic" id="mallet-img">
+            <!-- Mallet (Stick) SVG Graphic -->
+            <div class="mallet-container" id="mallet-element">
+              <svg id="mallet-svg" viewBox="0 0 120 400" width="100" height="340">
+                <defs>
+                  <linearGradient id="stick-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#8D5B4C"/>
+                    <stop offset="50%" stop-color="#B27E6A"/>
+                    <stop offset="100%" stop-color="#552F24"/>
+                  </linearGradient>
+                  
+                  <radialGradient id="head-gradient" cx="35%" cy="35%" r="65%">
+                    <stop offset="0%" stop-color="#D85C46" />
+                    <stop offset="60%" stop-color="#9C2715" />
+                    <stop offset="100%" stop-color="#550A00" />
+                  </radialGradient>
+                </defs>
+                
+                <g id="mallet-swing-group">
+                  <!-- Handle -->
+                  <rect x="52" y="110" width="16" height="260" rx="8" fill="url(#stick-gradient)" stroke="#260F09" stroke-width="4"/>
+                  <!-- Grip wrapper wrap thread -->
+                  <rect x="50" y="270" width="20" height="70" rx="3" fill="#C5A030" stroke="#260F09" stroke-width="2" opacity="0.8"/>
+                  <line x1="50" y1="285" x2="70" y2="285" stroke="#260F09" stroke-width="2"/>
+                  <line x1="50" y1="300" stroke="#260F09" stroke-width="2" x2="70" y2="300"/>
+                  <line x1="50" y1="315" stroke="#260F09" stroke-width="2" x2="70" y2="315"/>
+                  <line x1="50" y1="330" stroke="#260F09" stroke-width="2" x2="70" y2="330"/>
+                  
+                  <!-- Mallet Ball Head (The striker) -->
+                  <circle cx="60" cy="80" r="32" fill="url(#head-gradient)" stroke="#260F09" stroke-width="5"/>
+                  <!-- Soft wrap band -->
+                  <ellipse cx="60" cy="80" rx="32" ry="12" fill="#E5C158" opacity="0.2"/>
+                </g>
+              </svg>
             </div>
           </div>
 
