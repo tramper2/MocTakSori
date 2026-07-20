@@ -73,10 +73,10 @@ const state = {
   // Config Settings
   activeScriptureKey: 'banya',
   audioMode: 'danny', // 'danny' | 'eunee' | 'tts' | 'custom'
-  volume: 0.8,      // 0.0 - 1.0
+  volume: 0.85,     // 0.0 - 1.0
   speed: 1.0,       // 0.5 - 1.5 (TTS speed)
   synthPitch: 750,  // 500Hz - 1000Hz (Moktak pitch)
-  synthVolume: 0.9, // 0.0 - 1.0
+  synthVolume: 0.45,// 0.0 - 1.0
   idleTimeout: 8000,// milliseconds until fadeout (default 8s)
 
   // State Variables
