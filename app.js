@@ -72,7 +72,7 @@ const SCRIPTURES = {
 const state = {
   // Config Settings
   activeScriptureKey: 'banya',
-  audioMode: 'danny', // 'danny' | 'eunee' | 'tts' | 'custom'
+  audioMode: 'danny', // 'danny' | 'tts' | 'custom'
   volume: 0.85,     // 0.0 - 1.0
   speed: 1.0,       // 0.5 - 1.5 (TTS speed)
   synthPitch: 750,  // 500Hz - 1000Hz (Moktak pitch)
@@ -405,17 +405,6 @@ function renderActiveScriptureText() {
       </div>
     `;
     return;
-  } else if (state.audioMode === 'eunee') {
-    dom.scriptureTitleBadge.textContent = "으니음원 (조은희 개인기도)";
-    dom.scriptureBodyContainer.innerHTML = `
-      <div class="scripture-placeholder audio-notice-box">
-        <p class="audio-notice-icon">☸</p>
-        <p class="audio-notice-title">으니음원 수행</p>
-        <p class="audio-notice-sub">조은희 개인기도</p>
-        <p class="audio-notice-desc">목탁을 두드리면 마음의 평온과 함께 음원이 재생됩니다.</p>
-      </div>
-    `;
-    return;
   }
 
   const sc = SCRIPTURES[state.activeScriptureKey];
@@ -471,8 +460,6 @@ function setupAudioPlayer() {
   dom.sutraAudioPlayer.loop = true;
   if (state.audioMode === 'danny') {
     dom.sutraAudioPlayer.src = 'Audio/우종관개인기도2.wav';
-  } else if (state.audioMode === 'eunee') {
-    dom.sutraAudioPlayer.src = 'Audio/조은희개인기도.wav';
   } else if (state.audioMode === 'custom' && state.customAudioUrl) {
     dom.sutraAudioPlayer.src = state.customAudioUrl;
   } else if (state.audioMode === 'stream') {
@@ -514,7 +501,7 @@ function fadeAudioElement(targetVol, durationMs, callback) {
 
 // Audio Stream sync loop to auto-scroll scripture based on audio progress
 dom.sutraAudioPlayer.addEventListener('timeupdate', () => {
-  if (state.audioMode === 'tts' || state.audioMode === 'danny' || state.audioMode === 'eunee') return;
+  if (state.audioMode === 'tts' || state.audioMode === 'danny') return;
   const player = dom.sutraAudioPlayer;
   if (!player.duration || player.duration === Infinity) return;
   
@@ -721,7 +708,7 @@ function restartChant() {
     }
   } else {
     dom.sutraAudioPlayer.currentTime = 0;
-    if (state.audioMode !== 'danny' && state.audioMode !== 'eunee') {
+    if (state.audioMode !== 'danny') {
       updateActiveLineHighlight(0);
     }
   }
@@ -848,7 +835,7 @@ function toggleAudioModeConfig(mode) {
     
     // Stop audio player
     dom.sutraAudioPlayer.pause();
-  } else if (mode === 'danny' || mode === 'eunee') {
+  } else if (mode === 'danny') {
     dom.fileUploadContainer.classList.add('hidden');
     dom.speedControlGroup.classList.add('hidden');
     
