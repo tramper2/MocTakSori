@@ -382,6 +382,51 @@ body {
   padding-left: 0.2rem;
 }
 
+/* Custom TTS Textarea */
+.textarea-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.custom-textarea {
+  width: 100%;
+  padding: 0.75rem 0.85rem 1.8rem 0.85rem;
+  background-color: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  border-radius: 8px;
+  color: var(--color-text-light);
+  font-family: var(--font-serif);
+  font-size: 0.88rem;
+  line-height: 1.6;
+  resize: vertical;
+  min-height: 110px;
+  outline: none;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+}
+
+.custom-textarea::placeholder {
+  color: rgba(166, 162, 154, 0.5);
+  font-size: 0.82rem;
+}
+
+.custom-textarea:focus {
+  border-color: var(--color-gold-medium);
+  box-shadow: var(--glow-gold);
+  background-color: rgba(0, 0, 0, 0.55);
+}
+
+.char-counter {
+  position: absolute;
+  bottom: 8px;
+  right: 12px;
+  font-size: 0.75rem;
+  color: var(--color-gold-medium);
+  pointer-events: none;
+  font-family: var(--font-sans);
+  opacity: 0.85;
+}
+
 /* Sliders */
 .slider-header {
   display: flex;

@@ -57,8 +57,8 @@
         <div class="panel-section">
           <h2><span class="icon">☸</span> 수행 설정</h2>
 
-          <!-- Scripture Select -->
-          <div class="control-group">
+          <!-- Scripture Select (Optional/Hidden in custom wish mode) -->
+          <div class="control-group hidden" id="scripture-select-group">
             <label for="scripture-select">낭독할 불경 선택</label>
             <select id="scripture-select" class="custom-select">
               <option value="banya">마하반야바라밀다심경 (반야심경)</option>
@@ -77,14 +77,14 @@
                 우종관 소원빌기
               </label>
               <label class="radio-label">
-                <input type="radio" name="audio-mode" value="tts">
-                <span class="radio-custom"></span>
-                차분한 내장 독송 (TTS)
-              </label>
-              <label class="radio-label">
                 <input type="radio" name="audio-mode" value="custom">
                 <span class="radio-custom"></span>
                 개인 음원 업로드
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="audio-mode" value="tts">
+                <span class="radio-custom"></span>
+                소원문 직접 입력 (TTS)
               </label>
             </div>
           </div>
@@ -97,6 +97,16 @@
               <input type="file" id="audio-file-input" accept="audio/*">
             </label>
             <p class="help-text">MP3, WAV 등의 불경 음원을 직접 올려서 목탁과 연동해보세요.</p>
+          </div>
+
+          <!-- Custom TTS Text Input Container (Hidden by default) -->
+          <div class="control-group hidden" id="custom-tts-container">
+            <label for="custom-tts-input">소원 및 발원문 (최대 250자)</label>
+            <div class="textarea-wrapper">
+              <textarea id="custom-tts-input" class="custom-textarea" maxlength="250" rows="5" placeholder="마음속 간절한 소원이나 발원문을 입력하세요 (예: 오늘 하루도 가족 모두 건강하고 평안하기를 발원합니다)..."></textarea>
+              <div class="char-counter"><span id="char-count">0</span> / 250자</div>
+            </div>
+            <p class="help-text">목탁을 치면 입력하신 소원문을 차분한 음성으로 낭독합니다.</p>
           </div>
 
           <!-- Volume & Speed Controls -->
@@ -358,7 +368,7 @@
   </div>
 
   <!-- Audio elements fallback for Streaming Audio mode -->
-  <audio id="sutra-audio-player" preload="auto" loop crossorigin="anonymous"></audio>
+  <audio id="sutra-audio-player" preload="auto" loop></audio>
 
   <!-- JS Logic -->
   <script src="app.js"></script>

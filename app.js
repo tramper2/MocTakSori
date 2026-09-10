@@ -72,7 +72,8 @@ const SCRIPTURES = {
 const state = {
   // Config Settings
   activeScriptureKey: 'banya',
-  audioMode: 'danny', // 'danny' | 'tts' | 'custom'
+  audioMode: 'danny', // 'danny' | 'custom' | 'tts'
+  customTtsText: localStorage.getItem('moktak_custom_tts') ?? '오늘 하루도 가족 모두 건강하고 마음에 평온이 깃들기를 진심으로 발원합니다.',
   volume: 0.85,     // 0.0 - 1.0
   speed: 1.0,       // 0.5 - 1.5 (TTS speed)
   synthPitch: 750,  // 500Hz - 1000Hz (Moktak pitch)
@@ -84,16 +85,16 @@ const state = {
   activeLineIndex: 0,
   totalStrikes: 0,
   meditationTimeSec: 0,
-  
+
   // Timers and References
   idleTimer: null,
   meditationTimer: null,
   fadeInterval: null,
   ttsActiveUtterance: null,
-  
+
   // Custom uploaded audio object url
   customAudioUrl: null,
-  
+
   // Web Audio Context (initialized on first click)
   audioCtx: null,
   noiseBuffer: null
@@ -104,12 +105,16 @@ const dom = {
   moktakHitArea: document.getElementById('moktak-hit-area'),
   moktakBodyGroup: document.getElementById('moktak-body-group'),
   malletElement: document.getElementById('mallet-element'),
+  scriptureSelectGroup: document.getElementById('scripture-select-group'),
   scriptureSelect: document.getElementById('scripture-select'),
   audioModeRadios: document.getElementsByName('audio-mode'),
   fileUploadContainer: document.getElementById('file-upload-container'),
   audioFileInput: document.getElementById('audio-file-input'),
   fileNameText: document.getElementById('file-name-text'),
-  
+  customTtsContainer: document.getElementById('custom-tts-container'),
+  customTtsInput: document.getElementById('custom-tts-input'),
+  charCount: document.getElementById('char-count'),
+
   volumeSlider: document.getElementById('volume-slider'),
   volumeVal: document.getElementById('volume-val'),
   speedSlider: document.getElementById('speed-slider'),
@@ -121,26 +126,26 @@ const dom = {
   synthVolumeVal: document.getElementById('synth-volume-val'),
   idleTimeoutSlider: document.getElementById('idle-timeout-slider'),
   idleTimeoutVal: document.getElementById('idle-timeout-val'),
-  
+
   statCountToday: document.getElementById('stat-count-today'),
   statTimeToday: document.getElementById('stat-time-today'),
   resetStatsBtn: document.getElementById('reset-stats-btn'),
-  
+
   menuToggleBtn: document.getElementById('menu-toggle-btn'),
   panelCloseBtn: document.getElementById('panel-close-btn'),
   controlsPanel: document.getElementById('controls-panel'),
-  
+
   waveRing1: document.getElementById('wave-ring-1'),
   waveRing2: document.getElementById('wave-ring-2'),
   auraGlow: document.getElementById('aura-glow'),
   tapHint: document.getElementById('tap-hint'),
-  
+
   scriptureTitleBadge: document.getElementById('scripture-title-badge'),
   playbackStatusIndicator: document.getElementById('playback-status-indicator'),
   soundIndicator: document.getElementById('sound-indicator'),
   scriptureBodyContainer: document.getElementById('scripture-body-container'),
   restartChantBtn: document.getElementById('restart-chant-btn'),
-  
+
   sutraAudioPlayer: document.getElementById('sutra-audio-player'),
   particleCanvas: document.getElementById('particle-canvas'),
   starsContainer: document.getElementById('stars-container')
@@ -156,7 +161,7 @@ function initAudioContext() {
   try {
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
     state.audioCtx = new AudioContextClass();
-    
+
     // Create pre-allocated noise buffer for mallet click
     const sampleRate = state.audioCtx.sampleRate;
     const bufferSize = sampleRate * 0.1; // 0.1s is plenty
@@ -182,63 +187,63 @@ function playMoktakSynth() {
 
   const ctx = state.audioCtx;
   const now = ctx.currentTime;
-  
+
   // Randomize pitch slightly (±12Hz) to make it sound organic
   const randomPitchOffset = (Math.random() * 24) - 12;
   const pitch = state.synthPitch + randomPitchOffset;
   const vol = state.synthVolume;
-  
+
   // 1. Master gain envelope
   const masterGain = ctx.createGain();
   masterGain.gain.setValueAtTime(0, now);
   masterGain.gain.linearRampToValueAtTime(vol, now + 0.002); // instant attack
   masterGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.28); // hollow tail decay
-  
+
   // 2. Main Sine sweep (Fundamental tone of cavity)
   const oscMain = ctx.createOscillator();
   oscMain.type = 'sine';
   oscMain.frequency.setValueAtTime(pitch * 1.15, now);
   oscMain.frequency.exponentialRampToValueAtTime(pitch, now + 0.05); // quick drop in pitch mimics hollow shape
-  
+
   // 3. Secondary triangle/sine wave (Wood resonance overtones)
   const oscOver = ctx.createOscillator();
   oscOver.type = 'triangle';
   oscOver.frequency.setValueAtTime(pitch * 1.58, now); // wood block resonance ratio
-  
+
   const overtoneGain = ctx.createGain();
   overtoneGain.gain.setValueAtTime(vol * 0.35, now);
   overtoneGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
-  
+
   // 4. White noise burst (mallet contact click)
   const noiseSource = ctx.createBufferSource();
   noiseSource.buffer = state.noiseBuffer;
-  
+
   const noiseFilter = ctx.createBiquadFilter();
   noiseFilter.type = 'bandpass';
   noiseFilter.frequency.value = 1300;
   noiseFilter.Q.value = 5.0;
-  
+
   const noiseGain = ctx.createGain();
   noiseGain.gain.setValueAtTime(vol * 0.6, now);
   noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.012); // very rapid decay
-  
+
   // Connect modules
   oscMain.connect(masterGain);
-  
+
   oscOver.connect(overtoneGain);
   overtoneGain.connect(masterGain);
-  
+
   noiseSource.connect(noiseFilter);
   noiseFilter.connect(noiseGain);
   noiseGain.connect(masterGain);
-  
+
   masterGain.connect(ctx.destination);
-  
+
   // Play nodes
   oscMain.start(now);
   oscOver.start(now);
   noiseSource.start(now);
-  
+
   oscMain.stop(now + 0.3);
   oscOver.stop(now + 0.3);
   noiseSource.stop(now + 0.3);
@@ -263,7 +268,7 @@ class Particle {
     this.x = x;
     this.y = y;
     this.type = type; // 'spark' | 'petal' | 'ambient'
-    
+
     if (type === 'spark') {
       const angle = Math.random() * Math.PI * 2;
       const speed = Math.random() * 5 + 2;
@@ -300,7 +305,7 @@ class Particle {
   update() {
     this.x += this.vx;
     this.y += this.vy;
-    
+
     if (this.type === 'spark') {
       this.vy += 0.08; // gravity
       this.life -= this.decay;
@@ -331,7 +336,7 @@ class Particle {
       ctx.translate(this.x, this.y);
       ctx.rotate(this.angle);
       ctx.fillStyle = this.color.replace('0.95)', `${this.life * 0.95})`);
-      
+
       // Draw a small curved leaf shape (lotus petal)
       ctx.beginPath();
       ctx.moveTo(0, -this.size);
@@ -356,7 +361,7 @@ function spawnStrikeParticles(x, y) {
   for (let i = 0; i < sparkCount; i++) {
     particles.push(new Particle(x, y, 'spark'));
   }
-  
+
   // Lotus petal count
   const petalCount = 8;
   for (let i = 0; i < petalCount; i++) {
@@ -375,14 +380,14 @@ function seedAmbientParticles() {
 // Visual Particle Loop
 function animateParticles() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  
+
   particles = particles.filter(p => {
     p.update();
     p.draw();
     // Keep ambient or those still alive
     return p.type === 'ambient' || p.life > 0;
   });
-  
+
   requestAnimationFrame(animateParticles);
 }
 
@@ -390,27 +395,98 @@ function animateParticles() {
 seedAmbientParticles();
 animateParticles();
 
+// Splits user custom wish text into readable lines/sentences
+function getCustomTtsLines() {
+  const text = (state.customTtsText || '').trim();
+  if (!text) return [];
+
+  // Split by line breaks first
+  const rawLines = text.split(/\r?\n/);
+  const result = [];
+
+  rawLines.forEach(line => {
+    const trimmed = line.trim();
+    if (!trimmed) return;
+
+    // Split by sentence endings (. ! ?) while keeping reasonable pacing
+    const sentences = trimmed.split(/([.!?]+[\s]+)/);
+    let buffer = '';
+    for (let i = 0; i < sentences.length; i++) {
+      buffer += sentences[i];
+      if (i % 2 === 1 || i === sentences.length - 1) {
+        const s = buffer.trim();
+        if (s) result.push(s);
+        buffer = '';
+      }
+    }
+    if (buffer.trim()) {
+      result.push(buffer.trim());
+    }
+  });
+
+  return result.length > 0 ? result : [text];
+}
+
 // ==========================================
 // 5. Scripture Text Rendering & Sync
 // ==========================================
 function renderActiveScriptureText() {
   if (state.audioMode === 'danny') {
-    dom.scriptureTitleBadge.textContent = "대니음원 (우종관 개인기도)";
+    dom.scriptureTitleBadge.textContent = "우종관 소원성취";
     dom.scriptureBodyContainer.innerHTML = `
       <div class="scripture-placeholder audio-notice-box">
         <p class="audio-notice-icon">☸</p>
-        <p class="audio-notice-title">대니음원 수행</p>
-        <p class="audio-notice-sub">우종관 개인기도2</p>
+        <p class="audio-notice-title">우종관 소원성취</p>
+        <p class="audio-notice-sub">우종관 개인기도</p>
         <p class="audio-notice-desc">목탁을 두드리면 마음의 평온과 함께 음원이 재생됩니다.</p>
       </div>
     `;
+    return;
+  } else if (state.audioMode === 'custom') {
+    dom.scriptureTitleBadge.textContent = "개인 음원 수행";
+    dom.scriptureBodyContainer.innerHTML = `
+      <div class="scripture-placeholder audio-notice-box">
+        <p class="audio-notice-icon">📂</p>
+        <p class="audio-notice-title">개인 음원 수행</p>
+        <p class="audio-notice-sub">${dom.fileNameText ? dom.fileNameText.textContent : '업로드 음원'}</p>
+        <p class="audio-notice-desc">목탁을 두드리면 직접 올리신 음원이 재생됩니다.</p>
+      </div>
+    `;
+    return;
+  } else if (state.audioMode === 'tts') {
+    dom.scriptureTitleBadge.textContent = "나의 소원성취 발원문";
+    const lines = getCustomTtsLines();
+    dom.scriptureBodyContainer.innerHTML = '';
+
+    if (lines.length === 0) {
+      dom.scriptureBodyContainer.innerHTML = `
+        <div class="scripture-placeholder audio-notice-box">
+          <p class="audio-notice-icon">✍</p>
+          <p class="audio-notice-title">소원문 입력 대기</p>
+          <p class="audio-notice-desc">좌측 메뉴의 텍스트창에 소원이나 발원문을 입력해보세요.</p>
+        </div>
+      `;
+      return;
+    }
+
+    lines.forEach((line, index) => {
+      const p = document.createElement('p');
+      p.textContent = line;
+      p.id = `scripture-line-${index}`;
+      if (index === state.activeLineIndex) {
+        p.classList.add('active-line');
+      }
+      dom.scriptureBodyContainer.appendChild(p);
+    });
+
+    scrollToActiveLine();
     return;
   }
 
   const sc = SCRIPTURES[state.activeScriptureKey];
   dom.scriptureTitleBadge.textContent = sc.title;
   dom.scriptureBodyContainer.innerHTML = '';
-  
+
   sc.lines.forEach((line, index) => {
     const p = document.createElement('p');
     p.textContent = line;
@@ -420,17 +496,21 @@ function renderActiveScriptureText() {
     }
     dom.scriptureBodyContainer.appendChild(p);
   });
-  
+
   scrollToActiveLine();
 }
 
 function updateActiveLineHighlight(newIndex) {
-  if (newIndex < 0 || newIndex >= SCRIPTURES[state.activeScriptureKey].lines.length) return;
-  
+  const total = state.audioMode === 'tts'
+    ? getCustomTtsLines().length
+    : (SCRIPTURES[state.activeScriptureKey]?.lines.length || 0);
+
+  if (newIndex < 0 || newIndex >= total) return;
+
   // Remove old highlight
   const prevLine = dom.scriptureBodyContainer.querySelector('.active-line');
   if (prevLine) prevLine.classList.remove('active-line');
-  
+
   // Set new highlight
   state.activeLineIndex = newIndex;
   const currLine = document.getElementById(`scripture-line-${newIndex}`);
@@ -459,7 +539,7 @@ function scrollToActiveLine() {
 function setupAudioPlayer() {
   dom.sutraAudioPlayer.loop = true;
   if (state.audioMode === 'danny') {
-    dom.sutraAudioPlayer.src = 'Audio/우종관개인기도2.wav';
+    dom.sutraAudioPlayer.src = encodeURI('Audio/우종관개인기도2.wav');
   } else if (state.audioMode === 'custom' && state.customAudioUrl) {
     dom.sutraAudioPlayer.src = state.customAudioUrl;
   } else if (state.audioMode === 'stream') {
@@ -477,16 +557,16 @@ function fadeAudioElement(targetVol, durationMs, callback) {
   const startVol = player.volume;
   const step = 0.05;
   const volumeDelta = targetVol - startVol;
-  
+
   if (Math.abs(volumeDelta) < 0.01) {
     player.volume = targetVol;
     if (callback) callback();
     return;
   }
-  
+
   const stepIntervalTime = durationMs * step;
   let currentStepRatio = 0;
-  
+
   state.fadeInterval = setInterval(() => {
     currentStepRatio += step;
     if (currentStepRatio >= 1.0) {
@@ -504,12 +584,12 @@ dom.sutraAudioPlayer.addEventListener('timeupdate', () => {
   if (state.audioMode === 'tts' || state.audioMode === 'danny') return;
   const player = dom.sutraAudioPlayer;
   if (!player.duration || player.duration === Infinity) return;
-  
+
   const totalLines = SCRIPTURES[state.activeScriptureKey].lines.length;
   // Distribute lines evenly across duration
   const ratio = player.currentTime / player.duration;
   const computedIndex = Math.min(Math.floor(ratio * totalLines), totalLines - 1);
-  
+
   if (computedIndex !== state.activeLineIndex) {
     updateActiveLineHighlight(computedIndex);
   }
@@ -530,41 +610,46 @@ dom.sutraAudioPlayer.addEventListener('ended', () => {
 // Handles TTS playback line by line
 function speakNextTTSLine() {
   if (state.audioState !== 'playing' && state.audioState !== 'fading_in') return;
-  
+
   window.speechSynthesis.cancel(); // Clear any queued utterances
-  
-  const lines = SCRIPTURES[state.activeScriptureKey].lines;
+
+  const lines = state.audioMode === 'tts'
+    ? getCustomTtsLines()
+    : (SCRIPTURES[state.activeScriptureKey]?.lines || []);
+
+  if (lines.length === 0) return;
+
   if (state.activeLineIndex >= lines.length) {
     state.activeLineIndex = 0; // restart
   }
-  
+
   const lineText = lines[state.activeLineIndex];
-  
+
   // Create Speech Utterance
   const utter = new SpeechSynthesisUtterance(lineText);
   utter.lang = 'ko-KR';
   utter.rate = state.speed * 0.78; // Meditative slower pacing
   utter.pitch = 0.75; // Deeper resonant voice mimicking a Buddhist monk
   utter.volume = state.volume;
-  
+
   state.ttsActiveUtterance = utter;
-  
+
   // Highlight text
   updateActiveLineHighlight(state.activeLineIndex);
-  
+
   utter.onend = () => {
     // When a line finishes, advance and speak next line
     if (state.audioState === 'playing' || state.audioState === 'fading_in') {
       state.activeLineIndex = (state.activeLineIndex + 1) % lines.length;
-      // Small pause between lines for meditation spacing (e.g. 800ms)
+      // Small pause between lines for meditation spacing (e.g. 700ms)
       setTimeout(speakNextTTSLine, 700);
     }
   };
-  
+
   utter.onerror = (e) => {
     console.error("TTS SpeechSynthesis error", e);
   };
-  
+
   window.speechSynthesis.speak(utter);
 }
 
@@ -582,9 +667,9 @@ function resumeTTS() {
 function updatePlayerUI() {
   const badge = dom.playbackStatusIndicator.querySelector('.status-text');
   const dot = dom.playbackStatusIndicator.querySelector('.dot');
-  
+
   dot.className = 'dot';
-  
+
   switch (state.audioState) {
     case 'playing':
       badge.textContent = "수행 낭독 중";
@@ -627,7 +712,7 @@ function updatePlayerUI() {
 // Resets idle timer when user is active (tapping)
 function resetIdleTimer() {
   clearTimeout(state.idleTimer);
-  
+
   // Set new timer
   state.idleTimer = setTimeout(() => {
     // Fades out and pauses if no strikes occur within interval
@@ -641,12 +726,12 @@ function triggerFadeIn() {
     resetIdleTimer();
     return;
   }
-  
+
   state.audioState = 'fading_in';
   updatePlayerUI();
   resetIdleTimer();
   startMeditationTimer();
-  
+
   if (state.audioMode === 'tts') {
     state.audioState = 'playing'; // TTS resumes instantly
     updatePlayerUI();
@@ -654,7 +739,7 @@ function triggerFadeIn() {
   } else {
     // HTML5 Audio Stream / Custom File
     dom.sutraAudioPlayer.volume = 0;
-    
+
     // Play audio
     dom.sutraAudioPlayer.play().then(() => {
       fadeAudioElement(state.volume, 1500, () => {
@@ -662,14 +747,9 @@ function triggerFadeIn() {
         updatePlayerUI();
       });
     }).catch(e => {
-      console.warn("Audio element play failed, falling back to TTS", e);
-      // Fallback: switch to TTS automatically
-      state.audioMode = 'tts';
-      document.querySelector('input[name="audio-mode"][value="tts"]').checked = true;
-      toggleAudioModeConfig('tts');
-      state.audioState = 'playing';
+      console.warn("Audio element play error:", e);
+      state.audioState = 'paused';
       updatePlayerUI();
-      resumeTTS();
     });
   }
 }
@@ -677,11 +757,11 @@ function triggerFadeIn() {
 // Fades out audio and pauses
 function triggerFadeOut() {
   if (state.audioState === 'paused' || state.audioState === 'idle') return;
-  
+
   state.audioState = 'fading_out';
   updatePlayerUI();
   stopMeditationTimer();
-  
+
   if (state.audioMode === 'tts') {
     pauseTTS();
     state.audioState = 'paused';
@@ -698,7 +778,7 @@ function triggerFadeOut() {
 // Restarts chanting from line 0
 function restartChant() {
   state.activeLineIndex = 0;
-  
+
   if (state.audioMode === 'tts') {
     if (state.audioState === 'playing' || state.audioState === 'fading_in') {
       window.speechSynthesis.cancel();
@@ -708,7 +788,7 @@ function restartChant() {
     }
   } else {
     dom.sutraAudioPlayer.currentTime = 0;
-    if (state.audioMode !== 'danny') {
+    if (state.audioMode !== 'danny' && state.audioMode !== 'custom') {
       updateActiveLineHighlight(0);
     }
   }
@@ -729,7 +809,7 @@ function loadStats() {
   const today = getTodayString();
   state.totalStrikes = parseInt(localStorage.getItem(`moktak_strikes_${today}`) || '0');
   state.meditationTimeSec = parseInt(localStorage.getItem(`moktak_time_${today}`) || '0');
-  
+
   updateStatsUI();
 }
 
@@ -756,7 +836,7 @@ function stopMeditationTimer() {
 
 function updateStatsUI() {
   dom.statCountToday.textContent = state.totalStrikes.toLocaleString();
-  
+
   const m = String(Math.floor(state.meditationTimeSec / 60)).padStart(2, '0');
   const s = String(state.meditationTimeSec % 60).padStart(2, '0');
   dom.statTimeToday.textContent = `${m}:${s}`;
@@ -766,7 +846,7 @@ function resetStats() {
   const today = getTodayString();
   localStorage.setItem(`moktak_strikes_${today}`, '0');
   localStorage.setItem(`moktak_time_${today}`, '0');
-  
+
   state.totalStrikes = 0;
   state.meditationTimeSec = 0;
   updateStatsUI();
@@ -783,21 +863,21 @@ function strikeMoktak(e) {
 
   // 1. Trigger Sound Synthesizer
   playMoktakSynth();
-  
+
   // 2. Play CSS Animations
   // Remove classes to trigger reflow
   dom.moktakHitArea.classList.remove('active');
   dom.malletElement.classList.remove('active');
   dom.waveRing1.classList.remove('wave-ring-animate');
   dom.waveRing2.classList.remove('wave-ring-animate');
-  
+
   // Force browser layout recalculation
   void dom.moktakHitArea.offsetWidth;
-  
+
   // Add active classes
   dom.moktakHitArea.classList.add('active');
   dom.malletElement.classList.add('active');
-  
+
   // Trigger ripple rings
   dom.waveRing1.classList.add('wave-ring-animate');
   setTimeout(() => {
@@ -828,38 +908,38 @@ function strikeMoktak(e) {
 
 function toggleAudioModeConfig(mode) {
   state.audioMode = mode;
-  
+
   if (mode === 'tts') {
     dom.fileUploadContainer.classList.add('hidden');
+    dom.customTtsContainer.classList.remove('hidden');
     dom.speedControlGroup.classList.remove('hidden');
-    
+    if (dom.scriptureSelectGroup) dom.scriptureSelectGroup.classList.add('hidden');
+
     // Stop audio player
     dom.sutraAudioPlayer.pause();
-  } else if (mode === 'danny') {
-    dom.fileUploadContainer.classList.add('hidden');
-    dom.speedControlGroup.classList.add('hidden');
-    
-    // Stop Speech
-    window.speechSynthesis.cancel();
-    setupAudioPlayer();
-  } else if (mode === 'stream') {
-    dom.fileUploadContainer.classList.add('hidden');
-    dom.speedControlGroup.classList.add('hidden');
-    
-    // Stop Speech
-    window.speechSynthesis.cancel();
-    setupAudioPlayer();
   } else if (mode === 'custom') {
     dom.fileUploadContainer.classList.remove('hidden');
+    dom.customTtsContainer.classList.add('hidden');
     dom.speedControlGroup.classList.add('hidden');
-    
+    if (dom.scriptureSelectGroup) dom.scriptureSelectGroup.classList.add('hidden');
+
+    // Stop Speech
+    window.speechSynthesis.cancel();
+    setupAudioPlayer();
+  } else { // 'danny' (default)
+    dom.fileUploadContainer.classList.add('hidden');
+    dom.customTtsContainer.classList.add('hidden');
+    dom.speedControlGroup.classList.add('hidden');
+    if (dom.scriptureSelectGroup) dom.scriptureSelectGroup.classList.add('hidden');
+
     // Stop Speech
     window.speechSynthesis.cancel();
     setupAudioPlayer();
   }
-  
+
+  state.activeLineIndex = 0;
   renderActiveScriptureText();
-  
+
   // Reset audio state to pause/idle on switch
   triggerFadeOut();
   state.audioState = 'idle';
@@ -869,7 +949,7 @@ function toggleAudioModeConfig(mode) {
 
 // Wire Event Listeners
 function setupEventListeners() {
-  
+
   // Moktak Strike triggers (Mobile touchstart + PC mousedown)
   // Use non-passive touchstart to eliminate 300ms mobile tap delay
   dom.moktakHitArea.addEventListener('touchstart', strikeMoktak, { passive: false });
@@ -884,7 +964,7 @@ function setupEventListeners() {
   dom.menuToggleBtn.addEventListener('click', () => {
     dom.controlsPanel.classList.add('open');
   });
-  
+
   dom.panelCloseBtn.addEventListener('click', () => {
     dom.controlsPanel.classList.remove('open');
   });
@@ -895,7 +975,7 @@ function setupEventListeners() {
     state.activeLineIndex = 0;
     renderActiveScriptureText();
     setupAudioPlayer();
-    
+
     if (state.audioState === 'playing' || state.audioState === 'fading_in') {
       triggerFadeIn();
     }
@@ -908,6 +988,32 @@ function setupEventListeners() {
     });
   });
 
+  // Custom TTS Textarea Input listener
+  if (dom.customTtsInput) {
+    dom.customTtsInput.value = state.customTtsText;
+    if (dom.charCount) {
+      dom.charCount.textContent = state.customTtsText.length;
+    }
+
+    dom.customTtsInput.addEventListener('input', (e) => {
+      const val = e.target.value;
+      state.customTtsText = val;
+      if (dom.charCount) {
+        dom.charCount.textContent = val.length;
+      }
+      localStorage.setItem('moktak_custom_tts', val);
+
+      if (state.audioMode === 'tts') {
+        state.activeLineIndex = 0;
+        renderActiveScriptureText();
+        if (state.audioState === 'playing' || state.audioState === 'fading_in') {
+          window.speechSynthesis.cancel();
+          speakNextTTSLine();
+        }
+      }
+    });
+  }
+
   // Local File Upload
   dom.audioFileInput.addEventListener('change', (e) => {
     const file = e.target.files[0];
@@ -917,7 +1023,7 @@ function setupEventListeners() {
       }
       state.customAudioUrl = URL.createObjectURL(file);
       dom.fileNameText.textContent = file.name;
-      
+
       if (state.audioMode === 'custom') {
         setupAudioPlayer();
         triggerFadeOut();
@@ -931,7 +1037,7 @@ function setupEventListeners() {
     const val = parseInt(e.target.value);
     dom.volumeVal.textContent = `${val}%`;
     state.volume = val / 100;
-    
+
     // Dynamically adjust audio players
     dom.sutraAudioPlayer.volume = state.volume;
   });
@@ -949,7 +1055,7 @@ function setupEventListeners() {
     dom.pitchVal.textContent = `${val}Hz`;
     state.synthPitch = val;
   });
-  
+
   // Moktak Volume slider
   dom.synthVolumeSlider.addEventListener('input', (e) => {
     const val = parseInt(e.target.value);
@@ -982,18 +1088,18 @@ function renderBackgroundStars() {
   for (let i = 0; i < starCount; i++) {
     const star = document.createElement('div');
     star.className = 'star';
-    
+
     // Random sizes, positions, animations
     const size = Math.random() * 2.5 + 0.5;
     star.style.width = `${size}px`;
     star.style.height = `${size}px`;
     star.style.left = `${Math.random() * 100}%`;
     star.style.top = `${Math.random() * 100}%`;
-    
+
     // Stagger animation starts
     star.style.animationDelay = `${Math.random() * 15}s`;
     star.style.animationDuration = `${Math.random() * 10 + 10}s`;
-    
+
     container.appendChild(star);
   }
 }
